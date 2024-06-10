@@ -17,9 +17,19 @@ defaults
 frontend http_front
     bind *:80
     stats uri /haproxy?stats
+    acl url_prometheus path_beg /prometheus
+    acl url_grafana path_beg /grafana
+    use_backend prometheus_back if url_prometheus
+    use_backend grafana_back if url_grafana
     default_backend http_back
+
+backend prometheus_back
+    server prometheus 192.168.50.111:9090 check
+
+backend grafana_back
+    server grafana 192.168.50.111:3000 check
 
 backend http_back
     balance roundrobin
-    server server1 192.168.50.111:80 check
-    server server2 192.168.50.112:80 check
+    server server1 192.168.50.112:80 check
+
