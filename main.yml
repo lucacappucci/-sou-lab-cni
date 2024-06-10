@@ -1,0 +1,35 @@
+---
+- name: Installa EPEL repository
+  yum:
+    name: epel-release
+    state: present
+
+- name: Install Podman
+  yum:
+    name: podman
+    state: present
+
+- name: Ensure Podman service is started
+  service:
+    name: podman
+    state: started
+    enabled: yes
+
+- name: Create directory for HAProxy config
+  file:
+    path: /etc/haproxy
+    state: directory
+
+- name: Deploy HAProxy configuration
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+
+- name: Run HAProxy container
+  command: >
+    podman run -d --name haproxy
+    -v /etc/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    -p 80:80
+    -p 443:443
+    haproxy:latest
+  when: inventory_hostname == "soufe1"
