@@ -1,5 +1,5 @@
 # sou-lab-cni
-Scopo del documento
+Scopo del documento: \n
 Descrivere gli step volti all'implementazione di un esercizio di laboratorio propedeutico al colloquio tecnico con Sourcesense per l'area CNI (Cloud Native Infrastructure).
 Studio di Bash, Vagrant, Ansible, Prometheus, Grafana, Haproxy
 
