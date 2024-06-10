@@ -1,22 +1,20 @@
----
-- name: Install EPEL repository
+- name: install EPEL 
   yum:
     name: epel-release
     state: present
 
-- name: Install Podman
+- name: install Podman
   yum:
     name: podman
     state: present
 
-- name: Ensure Podman service is started
+- name: service is started
   service:
     name: podman
     state: started
     enabled: yes
 
-# HAProxy configuration and setup
-- name: Create directory for HAProxy config
+- name: directory HAProxy config
   file:
     path: /etc/haproxy
     state: directory
@@ -26,7 +24,7 @@
     src: haproxy.cfg.j2
     dest: /etc/haproxy/haproxy.cfg
 
-- name: Run HAProxy container
+- name: HAProxy container
   command: >
     podman run -d --name haproxy
     -v /etc/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
@@ -34,52 +32,52 @@
     haproxy:latest
   when: inventory_hostname == "soufe1"
 
-# Prometheus and Grafana configuration and setup
-- name: Create directory for Prometheus data
+- name: Create directory for containers volumes
   file:
-    path: /var/lib/prometheus
+    path: /containers_vols
     state: directory
+    mode: '0755'
 
-- name: Create directory for Prometheus config
+- name: Create Prometheus data directory
   file:
-    path: /etc/prometheus
+    path: /containers_vols/prometheus/data
     state: directory
+    owner: "{{ prometheus_id }}"
+    group: "{{ prometheus_id }}"
+    mode: '0755'
 
 - name: Deploy Prometheus configuration
   template:
     src: prometheus.yml.j2
-    dest: /etc/prometheus/prometheus.yml
+    dest: /containers_vols/prometheus/config/prometheus.yml
 
 - name: Run Prometheus container
   command: >
     podman run -d --name prometheus
-    -v /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    -v /var/lib/prometheus:/prometheus
+    -v /containers_vols/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml:z
+    -v /containers_vols/prometheus/data:/prometheus:z
     -p 9090:9090
-    prom/prometheus
+    prom/prometheus:{{ prometheus_tag }}
   when: inventory_hostname == "soube2"
 
-- name: Create directory for Grafana data
+- name: Create Grafana data directory
   file:
-    path: /var/lib/grafana
+    path: /containers_vols/grafana/data
     state: directory
-
-- name: Create directory for Grafana config
-  file:
-    path: /etc/grafana
-    state: directory
-
+    owner: "{{ grafana_id }}"
+    group: "{{ grafana_id }}"
+    mode: '0755'
+n
 - name: Deploy Grafana configuration
   template:
     src: grafana.ini.j2
-    dest: /etc/grafana/grafana.ini
+    dest: /containers_vols/grafana/config/grafana.ini
 
 - name: Run Grafana container
   command: >
     podman run -d --name grafana
-    -v /etc/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
-    -v /var/lib/grafana:/var/lib/grafana
+    -v /containers_vols/grafana/config/grafana.ini:/etc/grafana/grafana.ini:z
+    -v /containers_vols/grafana/data:/var/lib/grafana:z
     -p 3000:3000
     grafana/grafana
   when: inventory_hostname == "soube2"
-
