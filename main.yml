@@ -1,5 +1,5 @@
 ---
-- name: Installa EPEL repository
+- name: Install EPEL repository
   yum:
     name: epel-release
     state: present
@@ -15,21 +15,50 @@
     state: started
     enabled: yes
 
-- name: Create directory for HAProxy config
+- name: Create directory for Prometheus data
   file:
-    path: /etc/haproxy
+    path: /var/lib/prometheus
     state: directory
 
-- name: Deploy HAProxy configuration
-  template:
-    src: haproxy.cfg.j2
-    dest: /etc/haproxy/haproxy.cfg
+- name: Create directory for Prometheus config
+  file:
+    path: /etc/prometheus
+    state: directory
 
-- name: Run HAProxy container
+- name: Deploy Prometheus configuration
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+
+- name: Run Prometheus container
   command: >
-    podman run -d --name haproxy
-    -v /etc/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-    -p 80:80
-    -p 443:443
-    haproxy:latest
-  when: inventory_hostname == "soufe1"
+    podman run -d --name prometheus
+    -v /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    -v /var/lib/prometheus:/prometheus
+    -p 9090:9090
+    prom/prometheus
+  when: inventory_hostname == "soube2"
+
+- name: Create directory for Grafana data
+  file:
+    path: /var/lib/grafana
+    state: directory
+
+- name: Create directory for Grafana config
+  file:
+    path: /etc/grafana
+    state: directory
+
+- name: Deploy Grafana configuration
+  template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+
+- name: Run Grafana container
+  command: >
+    podman run -d --name grafana
+    -v /etc/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+    -v /var/lib/grafana:/var/lib/grafana
+    -p 3000:3000
+    grafana/grafana
+  when: inventory_hostname == "soube2"
