@@ -15,6 +15,26 @@
     state: started
     enabled: yes
 
+# HAProxy configuration and setup
+- name: Create directory for HAProxy config
+  file:
+    path: /etc/haproxy
+    state: directory
+
+- name: Deploy HAProxy configuration
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+
+- name: Run HAProxy container
+  command: >
+    podman run -d --name haproxy
+    -v /etc/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    -p 80:80
+    haproxy:latest
+  when: inventory_hostname == "soufe1"
+
+# Prometheus and Grafana configuration and setup
 - name: Create directory for Prometheus data
   file:
     path: /var/lib/prometheus
